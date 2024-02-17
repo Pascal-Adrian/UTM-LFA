@@ -73,7 +73,7 @@ class Grammar:
     - `q0` - the initial state;
     - `F` - a set of final states;
 
-    The method works by iterating through the production rules and adding the state transitions to the delta dictionary. The initial state is set to 'S' and the final states are set to the terminal symbols.
+    The method works by iterating through the production rules and adding the state transitions to the delta dictionary. If the production rule is of the form `A -> a` then the state `A` is added to the dictionary with the input symbol `a` and the value `[a]`. If the production rule is of the form `A -> aB` then the state `A` is added to the dictionary with the input symbol `a` and the value `[B]`.
 
 ```
    def to_finite_automaton(self):

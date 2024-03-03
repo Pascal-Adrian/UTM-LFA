@@ -60,7 +60,7 @@ class ExtendedGrammar(Grammar):
                         return False
 
                 if len(production) < 2:
-                    if production[0] not in self.VT:
+                    if production[0] not in self.VT and production[0] != '':
                         if explicit:
                             print(f"Grammar is not of type 3 because of production {production}")
                         return False

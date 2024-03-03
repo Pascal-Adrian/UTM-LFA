@@ -1,14 +1,10 @@
 import random
 
 class Grammar:
-    def __init__(self):
-        self.VN = {'S', 'B', 'C'}
-        self.VT = {'a', 'b', 'c'}
-        self.P = {
-            'S': ['aB'],
-            'B': ['aC', 'bB'],
-            'C': ['bB', 'c', 'aS']
-        }
+    def __init__(self, VN, VT, P):
+        self.VN = VN
+        self.VT = VT
+        self.P = P
 
     def generate_string(self):
         string = ''
@@ -33,11 +29,16 @@ class Grammar:
                 if len(production) == 1:
                     if production.islower():
                         delta.setdefault(state, {}).setdefault(production, [production])
+                    else:
+                        delta.setdefault(state, {}).setdefault(production, [''])
                 else:
                     delta.setdefault(state, {}).setdefault(production[0], []).append(production[1:])
         q0 = 'S'
         F = [t for production in self.P for t in self.P[production] if len(t) == 1 and t.islower()]
         return FiniteAutomaton(Q, Sigma, delta, q0, F)
+
+    def __str__(self):
+        return f"VN: {self.VN}\nVT: {self.VT}\nP: {self.P}"
 
 
 class FiniteAutomaton:
@@ -66,39 +67,50 @@ class FiniteAutomaton:
     def __str__(self):
         return f"Q: {self.Q}\nSigma: {self.Sigma}\ndelta: {self.delta}\nq0: {self.q0}\nF: {self.F}"
 
-grammar = Grammar()
-automaton = grammar.to_finite_automaton()
-print(automaton)
 
-for _ in range(10):
-    generated_string = grammar.generate_string()
-    print("\n=======================================")
-    print("Generated string:", generated_string)
-    print("String belongs to language:", automaton.string_belongs_to_language(generated_string))
+def main():
+    VN = {'S', 'B', 'C'}
+    VT = {'a', 'b', 'c'}
+    P = {
+            'S': ['aB'],
+            'B': ['aC', 'bB'],
+            'C': ['bB', 'c', 'aS']
+        }
+    grammar = Grammar(VN, VT, P)
+    automaton = grammar.to_finite_automaton()
+    print(automaton)
 
-for _ in range(3):
-    generated_string = grammar.generate_string()
-    random_index = random.randint(0, len(generated_string))
-    generated_string = generated_string[:random_index] + 'd' + generated_string[random_index:]
-    print("\n=======================================")
-    print("Generated string:", generated_string)
-    print("String belongs to language:", automaton.string_belongs_to_language(generated_string, True))
+    for _ in range(10):
+        generated_string = grammar.generate_string()
+        print("\n=======================================")
+        print("Generated string:", generated_string)
+        print("String belongs to language:", automaton.string_belongs_to_language(generated_string))
 
-for _ in range(10):
-    random_string = ''.join(random.choices(list(grammar.VT), k=10))
-    print("\n=======================================")
-    print("Generated string:", random_string)
-    print("String belongs to language:", automaton.string_belongs_to_language(random_string, True))
+    for _ in range(3):
+        generated_string = grammar.generate_string()
+        random_index = random.randint(0, len(generated_string))
+        generated_string = generated_string[:random_index] + 'd' + generated_string[random_index:]
+        print("\n=======================================")
+        print("Generated string:", generated_string)
+        print("String belongs to language:", automaton.string_belongs_to_language(generated_string, True))
 
-for _ in range(3):
-    generated_string = grammar.generate_string()
-    print("\n=======================================")
-    print("Generated string:", generated_string)
-    random_index = random.randint(0, len(generated_string))
-    print("Removing symbol at index", random_index)
-    generated_string = generated_string[:random_index] + generated_string[random_index + 1:]
-    print("Modified string:", generated_string)
-    print("String belongs to language:", automaton.string_belongs_to_language(generated_string, True))
+    for _ in range(10):
+        random_string = ''.join(random.choices(list(grammar.VT), k=10))
+        print("\n=======================================")
+        print("Generated string:", random_string)
+        print("String belongs to language:", automaton.string_belongs_to_language(random_string, True))
 
+    for _ in range(3):
+        generated_string = grammar.generate_string()
+        print("\n=======================================")
+        print("Generated string:", generated_string)
+        random_index = random.randint(0, len(generated_string))
+        print("Removing symbol at index", random_index)
+        generated_string = generated_string[:random_index] + generated_string[random_index + 1:]
+        print("Modified string:", generated_string)
+        print("String belongs to language:", automaton.string_belongs_to_language(generated_string, True))
+
+if __name__ == "__main__":
+    main()
 
 

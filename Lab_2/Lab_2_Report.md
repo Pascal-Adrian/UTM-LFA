@@ -365,8 +365,8 @@ F: {frozenset({'q2', 'q0'})}
 Type: DFA
 ```
 
-[![Alt Text](Lab_2/NFA_Graph.png)]
-[![Alt Text](Lab_2/DFA_Graph.png)]
+![Alt Text](NFA_Graph.png)
+![Alt Text](DFA_Graph.png)
 
 ## Conclusion:
 Through this lab, I delved into the complexities of formal languages and automata. By extending the grammar class,

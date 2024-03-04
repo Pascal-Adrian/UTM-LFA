@@ -1,6 +1,7 @@
 from Lab_2.Lab_2_1 import ExtendedGrammar
 import networkx as nx
 import matplotlib.pyplot as plt
+import graphviz
 
 
 class FiniteAutomaton:
@@ -12,6 +13,7 @@ class FiniteAutomaton:
         self.F = F
         self.type = self.check_DFA_or_NFA()
         self.grammar = self.convert_to_grammar()
+        self.plot_count = 0
 
     def convert_to_grammar(self):
         alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -42,66 +44,125 @@ class FiniteAutomaton:
                     return "NFA"
         return "DFA"
 
-    def convert_to_dfa(self):
-        def epsilon_closure(states, delta):
-            e_closure = set(states)
+    def NFA_to_DFA(self):
+        def epsilon_closure(states):
+            epsilon_closure_states = set(states)
             stack = list(states)
+
             while stack:
                 state = stack.pop()
-                transitions = delta.get(state, {}).get('', [])
-                for transition in transitions:
-                    if transition not in e_closure:
-                        e_closure.add(transition)
-                        stack.append(transition)
-            return frozenset(e_closure)
+                if state in self.delta and '' in self.delta[state]:
+                    for s in self.delta[state]['']:
+                        if s not in epsilon_closure_states:
+                            epsilon_closure_states.add(s)
+                            stack.append(s)
 
-        def move(states, symbol, delta):
-            moves = set()
+            return frozenset(epsilon_closure_states)
+
+        def move(states, symbol):
+            new_states = set()
             for state in states:
-                transitions = delta.get(state, {}).get(symbol, [])
-                moves.update(transitions)
-            return frozenset(moves)
+                if state in self.delta and symbol in self.delta[state]:
+                    new_states.update(self.delta[state][symbol])
+            return frozenset(new_states)
 
         dfa_states = set()
-        dfa_delta = {}
-        dfa_start_state = epsilon_closure({self.q0}, self.delta)
-        dfa_states.add(dfa_start_state)
-        stack = [dfa_start_state]
+        dfa_transitions = {}
+        dfa_final_states = set()
 
-        while stack:
-            current_states = stack.pop()
+        queue = [epsilon_closure({self.q0})]
+        dfa_states.add(queue[0])
+
+        while queue:
+            current_states = queue.pop(0)
+
             for symbol in self.Sigma:
-                next_states = epsilon_closure(move(current_states, symbol, self.delta), self.delta)
-                if next_states:
-                    dfa_delta[current_states, symbol] = next_states
-                    if next_states not in dfa_states:
-                        dfa_states.add(next_states)
-                        stack.append(next_states)
+                new_states = epsilon_closure(move(current_states, symbol))
+
+                if new_states not in dfa_states:
+                    queue.append(new_states)
+                    dfa_states.add(new_states)
+
+                dfa_transitions.setdefault(current_states, {})[symbol] = new_states
+
+        for state in dfa_states:
+            if state.intersection(self.F):
+                dfa_final_states.add(state)
+
+        dfa_states = {frozenset(state) for state in dfa_states}
 
         self.Q = dfa_states
-        self.delta = dfa_delta
+        self.delta = dfa_transitions
+        self.q0 = epsilon_closure({self.q0})
+        self.F = dfa_final_states
         self.type = "DFA"
 
-    def plot_automaton(self):
+    def plot_nfa(self):
         G = nx.DiGraph()
 
-        # Add nodes and edges
-        for (current_states, symbol), next_states in self.delta.items():
-            for next_state in next_states:
-                G.add_edge(current_states, next_state, label=symbol)
+        for state in self.Q:
+            G.add_node(state, shape='doublecircle' if state in self.F else 'circle')
 
-        # Plot the graph as a tree
-        plt.figure(figsize=(8, 6))
-        pos = nx.nx_agraph.graphviz_layout(G, prog="dot")
-        nx.draw(G, pos, with_labels=True, arrows=True)
-        edge_labels = {(current_states, next_state): symbol for (current_states, symbol), next_state in
-                       self.delta.items()}
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        trans = {}
+        for state, transitions in self.delta.items():
+            for symbol, next_states in transitions.items():
+                for next_state in next_states:
+                    trans.setdefault(state, {}).setdefault(next_state, []).append(symbol)
+
+        for state, next_state in trans.items():
+            for next_state, symbols in next_state.items():
+                G.add_edge(state, next_state, label=','.join(symbols))
+        pos = nx.spring_layout(G)
+
+        # Draw nodes
+        node_border_widths = [3 if state in self.F else 1 for state in G.nodes()]
+        node_labels = {state: state for state in G.nodes()}
+        nx.draw_networkx_nodes(G, pos, node_color='white', edgecolors='black', linewidths=node_border_widths, node_size=1000, alpha=0.75)
+        nx.draw_networkx_labels(G, pos, labels=node_labels, verticalalignment='top')
+
+        # Draw edges
+        edge_labels = {(n1, n2): d['label'] for n1, n2, d in G.edges(data=True)}
+        nx.draw_networkx_edges(G, pos)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.5, font_size=10)
+
+        plt.title('NFA')
+        plt.axis('off')
+        plt.show()
+
+    def plot_dfa(self):
+        G = nx.DiGraph()
+
+        # Add states
+        for state in self.Q:
+            G.add_node(state, shape='doublecircle' if state in self.F else 'circle')
+
+        # Add transitions
+        for state in self.Q:
+            for symbol in self.Sigma:
+                if self.delta[state].get(symbol):
+                    next_state = self.delta[state][symbol]
+                    G.add_edge(state, next_state, label=symbol)
+        print(G.edges(data=True))
+        pos = nx.spring_layout(G)
+
+        # Draw nodes
+        node_border_widths = [3 if state in self.F else 1 for state in G.nodes()]
+        node_labels = {state: ''.join(sorted(list(state))) for state in G.nodes()}
+        nx.draw_networkx_nodes(G, pos, node_color='white', node_size=1000, alpha=0.75, edgecolors='black',
+                               linewidths=node_border_widths)
+        nx.draw_networkx_labels(G, pos, labels=node_labels, verticalalignment='top')
+
+        # Draw edges
+        edge_labels = {(n1, n2): d['label'] for n1, n2, d in G.edges(data=True)}
+        nx.draw_networkx_edges(G, pos)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.7)
+
+        plt.title('DFA')
+        plt.axis('off')
         plt.show()
 
     def __str__(self):
         return f"Q: {self.Q}\nSigma: {self.Sigma}\ndelta: {self.delta}\nq0: {self.q0}\nF: {self.F}\nType: {self.type}\n"
-
 
 
 def main():
@@ -115,11 +176,11 @@ def main():
     }
     q0 = 'q0'
     fa = FiniteAutomaton(Q, sigma, delta, q0, F)
-    fa.plot_automaton()
+    fa.plot_nfa()
     print(fa)
     print(fa.grammar)
-    fa.convert_to_dfa()
-    # fa.plot_automaton()
+    fa.NFA_to_DFA()
+    fa.plot_dfa()
     print(fa)
 
 

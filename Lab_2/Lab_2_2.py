@@ -1,7 +1,6 @@
 from Lab_2.Lab_2_1 import ExtendedGrammar
 import networkx as nx
 import matplotlib.pyplot as plt
-import graphviz
 
 
 class FiniteAutomaton:
@@ -56,7 +55,6 @@ class FiniteAutomaton:
                         if s not in epsilon_closure_states:
                             epsilon_closure_states.add(s)
                             stack.append(s)
-
             return frozenset(epsilon_closure_states)
 
         def move(states, symbol):
@@ -142,7 +140,6 @@ class FiniteAutomaton:
                 if self.delta[state].get(symbol):
                     next_state = self.delta[state][symbol]
                     G.add_edge(state, next_state, label=symbol)
-        print(G.edges(data=True))
         pos = nx.spring_layout(G)
 
         # Draw nodes
@@ -155,7 +152,7 @@ class FiniteAutomaton:
         # Draw edges
         edge_labels = {(n1, n2): d['label'] for n1, n2, d in G.edges(data=True)}
         nx.draw_networkx_edges(G, pos)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.7)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, label_pos=0.3)
 
         plt.title('DFA')
         plt.axis('off')
